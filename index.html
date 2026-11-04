@@ -61,7 +61,7 @@ input[type=search]{width:100%;box-sizing:border-box;padding:11px 14px;border-rad
 </style>
 <div class="wrap">
   <header><h1>Films à voir</h1><div class="count" id="count"></div><div class="sync" id="sync" hidden></div></header>
-  <input type="search" id="q" placeholder="Rechercher dans ma liste" aria-label="Rechercher dans ma liste">
+  <input type="search" id="q" placeholder="Titre ou acteur dans ma liste" aria-label="Rechercher un titre ou un acteur dans ma liste">
   <details class="addbox" id="addbox"><summary>＋ Ajouter un film ou une série</summary>
     <input type="search" id="aq" placeholder="Titre (n'importe quelle langue)" aria-label="Titre à ajouter" autocomplete="off">
     <div id="ares"></div></details>
@@ -88,7 +88,13 @@ const TYPES=['Film','Série','Doc'],PLS=['Netflix','Prime Video','HBO','Disney+'
 function chips(el,key,items){el.innerHTML=[['','Tous'],...items].map(([v,l])=>`<button class="chip" data-k="${key}" data-v="${esc(v)}" aria-pressed="${f[key]===v}">${esc(l)}</button>`).join('')}
 function drawFilters(){chips(fType,'type',TYPES.map(x=>[x,x]));chips(fPl,'pl',PLS.map(x=>[x,x]));chips(fEtat,'etat',ETATS)}
 document.addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const k=c.dataset.k,v=c.dataset.v;f[k]=f[k]===v?'':v;drawFilters();render()});
-q.addEventListener('input',render);
+let actorQ='',actorSet=new Set(),actorNames='',aTimer=null;const aCache={};
+async function actorLookup(t){if(!POSTERS||t.length<3){actorQ='';actorSet=new Set();actorNames='';render();return}
+  try{let r=aCache[t];if(!r){const j=await tm('/search/person',{query:t,language:'fr-FR'});const ps=(j.results||[]).filter(x=>x.known_for_department==='Acting'&&(x.name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''))).slice(0,2);
+    const set=new Set();for(const x of ps){const c=await tm(`/person/${x.id}/combined_credits`);(c.cast||[]).forEach(y=>set.add((y.media_type==='movie'?'m':'t')+y.id))}
+    r=aCache[t]={set,names:ps.map(x=>x.name).join(', ')}}
+    if(q.value.trim()===t){actorQ=t;actorSet=r.set;actorNames=r.names;render()}}catch(e){}}
+q.addEventListener('input',()=>{render();clearTimeout(aTimer);const t=q.value.trim();if(t!==actorQ){actorSet=new Set();actorNames=''}aTimer=setTimeout(()=>actorLookup(t),400)});
 function vu(d){const s=st[d.id];return s&&s.vu!==undefined?s.vu:d.vu}
 function avis(d){const s=st[d.id];return s&&s.avis!==undefined?s.avis:d.avis}
 function rebuildData(){const add=Object.values(st).filter(x=>x&&x.add).map(x=>x.add);DATA=BASE.concat(add).sort((a,b)=>b.n-a.n)}
@@ -96,7 +102,7 @@ function render(){
   rebuildData();
   const t=q.value.trim().toLowerCase();
   const L=DATA.filter(d=>!(st[d.id]&&st[d.id].del)).filter(d=>{
-    if(t&&!(d.t+' '+d.np).toLowerCase().includes(t))return false;
+    if(t&&!(d.t+' '+d.np).toLowerCase().includes(t)&&!(actorQ===q.value.trim()&&d.tm&&actorSet.has(d.tt+d.tm)))return false;
     if(f.type&&d.ty!==f.type)return false;
     if(f.pl&&!d.pl.includes(f.pl))return false;
     if(f.etat==='vu'&&!vu(d))return false;
@@ -104,7 +110,7 @@ function render(){
     if(f.etat==='av'&&!d.av)return false;
     if(f.etat==='dispo'&&!d.pl.some(p=>p!=='Plex'&&PLS.includes(p)))return false;
     return true});
-  count.textContent=L.length+' titres · '+L.filter(d=>d.pl.length).length+' avec une plateforme';
+  count.textContent=L.length+' titres · '+L.filter(d=>d.pl.length).length+' avec une plateforme'+(t&&actorNames&&actorQ===q.value.trim()?' · recherche aussi par acteur : '+actorNames:'');
   list.innerHTML=L.map(card).join('')||'<div class="foot">Aucun titre ne correspond.</div>';watchCards()}
 function card(d){
   const v=vu(d),a=avis(d);
