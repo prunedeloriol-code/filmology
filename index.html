@@ -90,7 +90,7 @@ function drawFilters(){chips(fType,'type',TYPES.map(x=>[x,x]));chips(fPl,'pl',PL
 document.addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const k=c.dataset.k,v=c.dataset.v;f[k]=f[k]===v?'':v;drawFilters();render()});
 let actorQ='',actorSet=new Set(),actorNames='',aTimer=null;const aCache={};
 async function actorLookup(t){if(!POSTERS||t.length<3){actorQ='';actorSet=new Set();actorNames='';render();return}
-  try{let r=aCache[t];if(!r){const j=await tm('/search/person',{query:t,language:'fr-FR'});const ps=(j.results||[]).filter(x=>x.known_for_department==='Acting'&&(x.name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''))).slice(0,2);
+  try{let r=aCache[t];if(!r){const j=await tm('/search/person',{query:t,language:'fr-FR'});const ps=(j.results||[]).filter(x=>x.known_for_department==='Acting'&&(x.name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''))).slice(0,4);
     const set=new Set();for(const x of ps){const c=await tm(`/person/${x.id}/combined_credits`);(c.cast||[]).forEach(y=>set.add((y.media_type==='movie'?'m':'t')+y.id))}
     r=aCache[t]={set,names:ps.map(x=>x.name).join(', ')}}
     if(q.value.trim()===t){actorQ=t;actorSet=r.set;actorNames=r.names;render()}}catch(e){}}
@@ -111,7 +111,7 @@ function render(){
     if(f.etat==='dispo'&&!d.pl.some(p=>p!=='Plex'&&PLS.includes(p)))return false;
     return true});
   count.textContent=L.length+' titres · '+L.filter(d=>d.pl.length).length+' avec une plateforme'+(t&&actorNames&&actorQ===q.value.trim()?' · recherche aussi par acteur : '+actorNames:'');
-  list.innerHTML=L.map(card).join('')||'<div class="foot">Aucun titre ne correspond.</div>';watchCards()}
+  list.innerHTML=L.map(card).join('')||(POSTERS&&t.length>=3&&actorQ!==q.value.trim()?'<div class="foot">Recherche des films de cet acteur…</div>':'<div class="foot">Aucun titre ne correspond.</div>');watchCards()}
 function card(d){
   const v=vu(d),a=avis(d);
   const img=POSTERS&&d.po?`<img loading="lazy" alt="" src="https://image.tmdb.org/t/p/w185/${d.po}.jpg">`:esc(d.t.replace(/^(The|Les?|La|El|Los|Las|Un|Une)\s+/i,'').charAt(0).toUpperCase());
