@@ -109,7 +109,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const TYPES=['Film','Série','Doc'],PLS=['Netflix','Prime Video','HBO','Disney+','Plex'],ETATS=[['nonvu','Pas encore vu'],['later','Mis de côté'],['vu','Déjà vu'],['av','À vérifier']];
 function chips(el,key,items){el.innerHTML=[['','Tous'],...items].map(([v,l])=>`<button class="chip" data-k="${key}" data-v="${esc(v)}" aria-pressed="${v===''?f[key].size===0:f[key].has(v)}">${esc(l)}</button>`).join('')}
 const gl=d=>(d.g||'').split(',').map(x=>x.trim()).filter(Boolean);
-const FDEFS=[['pl','Streaming'],['etat','Statut'],['genre','Type'],['type','Catégorie']];let openF='';
+const FDEFS=[['type','Format'],['pl','Streaming'],['genre','Genre'],['etat','Suivi']];let openF='';
 function fitems(k){if(k==='pl')return PLS.map(x=>[x,x]);if(k==='etat')return ETATS;if(k==='type')return TYPES.map(x=>[x,x]);
   const cnt={};DATA.forEach(d=>{if(st[d.id]&&st[d.id].del)return;gl(d).forEach(g=>{cnt[g]=(cnt[g]||0)+1})});
   return Object.entries(cnt).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([g,n])=>[g,g+' ('+n+')'])}
