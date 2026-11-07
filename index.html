@@ -106,7 +106,7 @@ let sortBy='recent';try{sortBy=localStorage.getItem('filmology-sort')||'recent'}
 const f={type:new Set(),pl:new Set(),etat:new Set(['nonvu']),genre:new Set()};
 let prov={};try{prov=JSON.parse(localStorage.getItem('filmology-prov')||'{}')}catch(e){}let confirmId=null,openId=null;let ov={};try{ov=JSON.parse(localStorage.getItem('filmology-ov')||'{}')}catch(e){}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const TYPES=['Film','Série','Doc'],PLS=['Netflix','Prime Video','HBO','Disney+','Plex'],ETATS=[['nonvu','Pas encore vu'],['later','Mis de côté'],['vu','Déjà vu'],['av','À vérifier']];
+const TYPES=['Film','Série','Doc'],PLS=['Netflix','Prime Video','HBO','Disney+','Plex'],ETATS=[['nonvu','À voir maintenant'],['nodispo','Pas dispo sur mes plateformes'],['later','Mis de côté'],['vu','Déjà vu'],['av','À vérifier']];
 function chips(el,key,items){el.innerHTML=[['','Tous'],...items].map(([v,l])=>`<button class="chip" data-k="${key}" data-v="${esc(v)}" aria-pressed="${v===''?f[key].size===0:f[key].has(v)}">${esc(l)}</button>`).join('')}
 const gl=d=>(d.g||'').split(',').map(x=>x.trim()).filter(Boolean);
 const FDEFS=[['type','Format'],['pl','Streaming'],['genre','Genre'],['etat','Suivi']];let openF='';
@@ -149,7 +149,7 @@ function render(){
     if(f.type.size&&!f.type.has(d.ty))return false;
     if(f.genre.size&&![...f.genre].some(g=>gl(d).includes(g)))return false;
     if(f.pl.size&&![...f.pl].some(p=>d.pl.includes(p)))return false;
-    if(f.etat.size&&![...f.etat].some(x=>x==='vu'?vu(d):x==='nonvu'?(!vu(d)&&!later(d)):x==='later'?(later(d)&&!vu(d)):x==='av'?isAv(d):false))return false;
+    if(f.etat.size&&![...f.etat].some(x=>x==='vu'?vu(d):x==='nonvu'?(!vu(d)&&!later(d)&&d.pl.length>0):x==='nodispo'?(!vu(d)&&!later(d)&&d.pl.length===0):x==='later'?(later(d)&&!vu(d)):x==='av'?isAv(d):false))return false;
     return true});
   const dk=d=>d.d!==undefined?d.d:1e6+((st[d.id]&&st[d.id].ts)||0)/1e6;
   if(sortBy==='recent')L.sort((a,b)=>dk(b)-dk(a));else if(sortBy==='old')L.sort((a,b)=>dk(a)-dk(b));
