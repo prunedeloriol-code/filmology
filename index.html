@@ -103,7 +103,7 @@ const KEY='filmology-v1';let st={};try{st=JSON.parse(localStorage.getItem(KEY)||
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){};sched()};
 const S=id=>{const o=st[id]||(st[id]={});o.ts=Date.now();return o};
 let sortBy='recent';try{sortBy=localStorage.getItem('filmology-sort')||'recent'}catch(e){}
-const f={type:new Set(),pl:new Set(),etat:new Set(),genre:new Set()};
+const f={type:new Set(),pl:new Set(),etat:new Set(['nonvu']),genre:new Set()};
 let prov={};try{prov=JSON.parse(localStorage.getItem('filmology-prov')||'{}')}catch(e){}let confirmId=null,openId=null;let ov={};try{ov=JSON.parse(localStorage.getItem('filmology-ov')||'{}')}catch(e){}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const TYPES=['Film','Série','Doc'],PLS=['Netflix','Prime Video','HBO','Disney+','Plex'],ETATS=[['nonvu','Pas encore vu'],['later','Mis de côté'],['vu','Déjà vu'],['av','À vérifier']];
@@ -118,7 +118,7 @@ function drawFilters(){
   fpanel.hidden=!openF;if(openF)chips(fpanel,openF,fitems(openF));else fpanel.innerHTML=''}
 sortSel.value=sortBy;sortSel.addEventListener('change',()=>{sortBy=sortSel.value;try{localStorage.setItem('filmology-sort',sortBy)}catch(e){}render()});
 fbar.addEventListener('click',e=>{const b=e.target.closest('[data-fo]');if(!b)return;openF=openF===b.dataset.fo?'':b.dataset.fo;drawFilters()});
-reset.addEventListener('click',()=>{f.type.clear();f.pl.clear();f.etat.clear();f.genre.clear();q.value='';actorQ='';actorSet=new Set();actorNames='';drawFilters();render()});
+reset.addEventListener('click',()=>{f.type.clear();f.pl.clear();f.etat.clear();f.etat.add('nonvu');f.genre.clear();q.value='';actorQ='';actorSet=new Set();actorNames='';drawFilters();render()});
 document.addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;const k=c.dataset.k,v=c.dataset.v;if(v===''||f[k].has(v))f[k].clear();else{f[k].clear();f[k].add(v)}drawFilters();render()});
 const nrm=x=>String(x).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 let cast={};try{cast=JSON.parse(localStorage.getItem('filmology-cast2')||'{}')}catch(e){}
@@ -154,7 +154,7 @@ function render(){
   const dk=d=>d.d!==undefined?d.d:1e6+((st[d.id]&&st[d.id].ts)||0)/1e6;
   if(sortBy==='recent')L.sort((a,b)=>dk(b)-dk(a));else if(sortBy==='old')L.sort((a,b)=>dk(a)-dk(b));
   count.textContent=L.length+' titres · '+L.filter(d=>d.pl.length).length+' avec une plateforme'+(t&&actorNames&&actorQ===q.value.trim()?' · recherche aussi par acteur : '+actorNames:'');
-  reset.hidden=!(t||f.type.size||f.pl.size||f.etat.size||f.genre.size);
+  reset.hidden=!(t||f.type.size||f.pl.size||f.genre.size||!(f.etat.size===1&&f.etat.has('nonvu')));
   list.innerHTML=L.map(card).join('')||(POSTERS&&t.length>=3&&actorQ!==q.value.trim()?'<div class="foot">'+(castBusy?'Chargement des acteurs de ta liste…':'Recherche des films de cet acteur…')+'</div>':'<div class="foot">Aucun titre ne correspond.</div>');watchCards()}
 function infoBox(d){const o=ov[d.id];const c=cast[d.tt+d.tm];
   return '<div class="info">'+(o?esc(o):(d.tm&&POSTERS?'Chargement du résumé…':'Résumé indisponible pour ce titre.'))+(c&&c.split('#')[0]?'<small>Avec '+esc(c.split('#')[0].split('|').slice(0,6).join(', '))+'</small>':'')+(c&&c.split('#')[1]?'<small>De '+esc(c.split('#')[1].split('|').join(', '))+'</small>':'')+'</div>'}
