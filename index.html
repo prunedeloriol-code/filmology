@@ -143,7 +143,8 @@ function isAv(d){const s=st[d.id];return d.av&&!(s&&s.ok)}
 function later(d){const s=st[d.id];return !!(s&&s.later)}
 function avis(d){const s=st[d.id];return s&&s.avis!==undefined?s.avis:d.avis}
 const eff=b=>{const s=st[b.id];return(s&&s.alt&&b.alt)?Object.assign({},b,{g:'',po:'',tm:0,tt:'',pl:[],im:'',n:0,np:b.np},b.alt,{id:b.id,d:b.d,alt:{t:b.t,y:b.y,ty:b.ty,n:b.n,im:b.im},av:false,sw:true}):b};
-function rebuildData(){const add=Object.values(st).filter(x=>x&&x.add).map(x=>x.add);DATA=BASE.map(eff).concat(add).sort((a,b)=>b.n-a.n)}
+const IMR={tt15314262:6.3};
+function rebuildData(){const add=Object.values(st).filter(x=>x&&x.add).map(x=>x.add).map(o=>o.tmdb?{...o,n:IMR[o.im]||0,np:'Ajouté depuis l\'app · note IMDb à compléter',tmdb:false}:o);DATA=BASE.map(eff).concat(add).sort((a,b)=>b.n-a.n)}
 function dedupeAdds(){let ch=false;const nk=d=>nrm(d.t)+'|'+d.y;for(const k in st){const x=st[k];if(!x||!x.add||x.del)continue;const a=x.add;const b=BASE.find(b=>b.id!==a.id&&((b.tm&&a.tm&&b.tm===a.tm&&b.tt===a.tt)||nk(b)===nk(a)));
   if(b){const sb=st[b.id]||(st[b.id]={});if(x.vu&&sb.vu===undefined)sb.vu=true;if(x.avis&&sb.avis===undefined)sb.avis=x.avis;sb.ts=Date.now();x.del=true;x.ts=Date.now();ch=true}}if(ch)save()}
 function render(){
@@ -174,7 +175,7 @@ function card(d){
   const q2=encodeURIComponent(d.t);
   const del=confirmId===d.id?`<span class="confirm">Supprimer ?<button class="del" data-a="yes" data-id="${d.id}">Oui</button><button class="del" data-a="no" data-id="${d.id}">Non</button></span>`:`<button class="del" data-a="ask" data-id="${d.id}">Supprimer</button>`;
   return `<article class="card t-${d.ty==='Série'?'serie':d.ty==='Doc'?'doc':'film'}${v?' vu':''}" data-card="${d.id}"><div class="poster" data-a="info" data-id="${d.id}">${img}</div><div class="body">
-  <div class="top"><div class="rate${d.n?'':' na'}" title="Note IMDb"><b>${d.n?d.n.toFixed(1):'–'}</b><span>${d.tmdb?'TMDB':'IMDb'}</span></div><label title="Marquer comme vu"><input type="checkbox" data-a="vu" data-id="${d.id}" ${v?'checked':''} aria-label="Vu"></label><button class="tbtn title" data-a="info" data-id="${d.id}" aria-expanded="${openId===d.id}">${esc(d.t)}</button></div>
+  <div class="top"><div class="rate${d.n?'':' na'}" title="Note IMDb"><b>${d.n?d.n.toFixed(1):'–'}</b><span>IMDb</span></div><label title="Marquer comme vu"><input type="checkbox" data-a="vu" data-id="${d.id}" ${v?'checked':''} aria-label="Vu"></label><button class="tbtn title" data-a="info" data-id="${d.id}" aria-expanded="${openId===d.id}">${esc(d.t)}</button></div>
   <div class="meta"><span class="badge">${esc(d.ty==='À identifier'?'?':d.ty)}</span>${d.y?`<span>${esc(d.y)}</span>`:''}${d.g?`<span>${esc(d.g)}</span>`:''}${isAv(d)?'<span class="badge warn">À vérifier</span>':''}${lt&&!v?'<span class="badge">Mis de côté</span>':''}</div>
   ${d.np?`<div class="perso">Ta note : ${esc(d.np)}</div>`:''}
   ${d.alt?`<div class="alt"><span>${d.sw?'Tu as choisi l\'autre version. Avant :':'Autre version possible :'} ${esc(d.alt.t)} (${esc(d.alt.ty)} ${esc(d.alt.y)}${d.alt.n?' · '+d.alt.n.toFixed(1)+' IMDb':''})</span><button class="del" data-a="alt" data-id="${d.id}">${d.sw?'Revenir':'Choisir celle-ci'}</button></div>`:''}
@@ -217,8 +218,8 @@ aq.addEventListener('input',()=>{clearTimeout(aT);const t=aq.value.trim();if(t.l
 async function addTitle(m,i){const [d,p]=await Promise.all([tm(`/${m}/${i}`,{language:'fr-FR',append_to_response:'external_ids'}),tm(`/${m}/${i}/watch/providers`)]);
   const pi=provInfo(p),g=mapG(d.genres||[]);let ty=m==='movie'?'Film':'Série';if(g.includes('Documentaire'))ty='Doc';
   const id=Number(String(i)+(m==='tv'?'2':'1'))+1000000;
-  const n=d.vote_average?Math.round(d.vote_average*10)/10:0;
-  const obj={id,t:d.title||d.name,ty,y:(d.release_date||d.first_air_date||'').slice(0,4),g:g.join(', '),n,pl:pi.fl,av:true,np:'Ajouté depuis l\'app · note TMDB (pas IMDb)',vu:false,avis:'',im:(d.external_ids||{}).imdb_id||'',po:(d.poster_path||'').replace(/^\//,'').replace(/\.jpg$/,''),tm:+i,tt:m==='movie'?'m':'t',tmdb:true};
+  const n=IMR[(d.external_ids||{}).imdb_id]||0;
+  const obj={id,t:d.title||d.name,ty,y:(d.release_date||d.first_air_date||'').slice(0,4),g:g.join(', '),n,pl:pi.fl,av:true,np:'Ajouté depuis l\'app · note IMDb à compléter',vu:false,avis:'',im:(d.external_ids||{}).imdb_id||'',po:(d.poster_path||'').replace(/^\//,'').replace(/\.jpg$/,''),tm:+i,tt:m==='movie'?'m':'t'};
   const s0=S(id);s0.add=obj;delete s0.del;prov[id]=pi;save();return obj}
 ares.addEventListener('click',async e=>{const b=e.target.closest('.ar');if(!b)return;ares.innerHTML='<div class="none">Ajout en cours…</div>';
   try{const obj=await addTitle(b.dataset.m,b.dataset.i);aq.value='';ares.innerHTML='<div class="none">✓ « '+esc(obj.t)+' » ajouté</div>';drawFilters();render()}catch(err){ares.innerHTML='<div class="none">Ajout impossible, réessaie</div>'}});
